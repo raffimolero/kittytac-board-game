@@ -1,6 +1,6 @@
 use crate::helpers::arr_2d_from_iter;
 use rand::{distributions::Uniform, prelude::*};
-use std::fmt::Display;
+use std::{fmt::Display, iter::repeat};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PieceKind {
@@ -83,16 +83,13 @@ impl Tile {
 }
 impl Display for Tile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let [l, r] = match self.height {
-            0 => [' ', ' '],
-            1 => ['[', ']'],
-            2 => ['(', ')'],
-            _ => panic!("Taller blocks not supported."),
-        };
+        // TODO: use terminal background colors to indicate height instead of actual characters
         write!(
             f,
-            "{l}{}{r}",
-            self.piece.map_or('_'.into(), |p| p.to_string())
+            "{:>2}{}{:<2}",
+            repeat('[').take(self.height as usize).collect::<String>(),
+            self.piece.map_or('_'.into(), |p| p.to_string()),
+            repeat(']').take(self.height as usize).collect::<String>(),
         )
     }
 }
