@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, iter::repeat};
 
 /// for format strings
 pub const RESET: &'static str = "\x1b[0m";
@@ -36,6 +36,10 @@ impl Display for Color {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.show(false, false))
     }
+}
+
+pub fn repeat_char(c: char, count: usize) -> String {
+    repeat(c).take(count).collect::<String>()
 }
 
 pub fn arr_2d_from_iter<T, const N: usize>(mut iter: impl Iterator<Item = T>) -> [[T; N]; N] {

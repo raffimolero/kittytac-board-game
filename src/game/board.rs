@@ -1,7 +1,7 @@
 use super::tile::Tile;
-use crate::helpers::arr_2d_from_iter;
+use crate::helpers::{arr_2d_from_iter, repeat_char, Color, RESET};
 use rand::{distributions::Uniform, prelude::*};
-use std::{fmt::Display, ops::RangeInclusive};
+use std::{fmt::Display, iter::repeat, ops::RangeInclusive};
 use thiserror::Error;
 
 // pub fn num_to_chars(range: RangeInclusive<char>, mut num: usize) -> String {
@@ -119,12 +119,18 @@ impl<const N: usize> From<&str> for Board<N> {
 
 impl<const N: usize> Display for Board<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let bar = repeat_char('━', N * 3);
+        let border_color = Color::Magenta.show(false, false);
+        writeln!(f, "{border_color}┏{bar}┓",)?;
         for row in &self.tiles {
+            write!(f, "┃")?;
             for tile in row {
                 write!(f, "{tile}")?;
             }
-            writeln!(f)?;
+            writeln!(f, "{border_color}┃")?;
         }
+        writeln!(f, "┗{bar}┛{RESET}")?;
+
         Ok(())
     }
 }
