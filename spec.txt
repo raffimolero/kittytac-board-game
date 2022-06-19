@@ -19,7 +19,12 @@ THE COMPONENTS
 60x cube
 
 THE SETUP
-For each tile on the board, roll the die. If 5 or 6 comes up, then place a cube on that tile (use the placement tracker to track which tile is being iterated on). After all tiles are iterated through, repeat the process, this time iterating on the cubes that were placed (creating 2 layers of cubes). Then, in each corner, place each player's pieces (including on top of cubes) in this manner:
+For each tile on the board, roll the die.
+If 5 or 6 comes up, then place a cube on that tile
+- (use the placement tracker to track which tile is being iterated on).
+After all tiles are iterated through, repeat the process,
+- this time iterating on the cubes that were placed (creating 2 layers of cubes).
+Then, in each corner, place each player's pieces (including on top of cubes) in this manner:
 
 8x8 variant:
 _P_
@@ -39,10 +44,21 @@ P - pawn
 Then, place a goal tile of the player's color under the king. That's it.
 
 MOVEMENT
-Players take turns moving, as in chess. Each piece moves like its counterpart in chess (though capturing is different, more on that later), with one exception: the pawn moves and attacks like the king. All pieces except knights cannot traverse vertical cliffs or drops of 2 cubes (the latter kills the piece if forced). Linear pieces (bishops and rooks) cannot continue traveling after going up a "step", but can continue traveling after going down one or more steps.
+Players take turns moving, as in chess.
+Each piece moves like its counterpart in chess (though capturing is different, more on that later), with one exception:
+- the pawn moves and attacks like the king.
+All pieces except knights cannot traverse vertical cliffs or drops of 2 cubes
+- (the latter kills the piece if forced).
+Linear pieces (bishops and rooks) cannot continue traveling after going up a "step"
+- but can continue traveling after going down one or more steps.
 
 PUSHING
-Instead of capturing, pieces can "Push" other pieces on their attacked squares. This moves the target piece away from the pusher, as directly as possible, with the exception that a knight can force its target to make a king or pawn's move. Pieces die if they are pushed off the board or off a 2-cube-tall cliff. Nothing happens if a piece is pushed into another piece or into a 2-tall wall from the bottom. After being pushed, the piece can't move for one turn (the opponent has to move something else on their turn).
+Instead of capturing, pieces can "Push" other pieces on their attacked squares.
+This moves the target piece away from the pusher, as directly as possible,
+- with the exception that a knight can force its target to make a king or pawn's move.
+Pieces die if they are pushed off the board or off a 2-cube-tall cliff.
+Nothing happens if a piece is pushed into another piece or into a 2-tall wall from the bottom.
+After being pushed, the piece can't move for one turn (the opponent has to move something else on their turn).
 
 WIN CONDITIONS
 The game is won by a player if:
