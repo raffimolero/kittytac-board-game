@@ -1,5 +1,8 @@
 //! a bunch of general-purpose stuff
 
+#[cfg(test)]
+mod tests;
+
 use std::{
     fmt::Display,
     io::{stdin, stdout, Write},
@@ -72,21 +75,4 @@ pub fn arr_2d_from_iter<T, const N: usize>(mut iter: impl Iterator<Item = T>) ->
             ))
         })
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    #[should_panic = "10 was too large to convert into a char between '0'..='9'"]
-    fn test_num_to_char_overflow_decimal() {
-        num_to_char(10, '0'..='9');
-    }
-
-    #[test]
-    #[should_panic = "27 was too large to convert into a char between 'a'..='z'"]
-    fn test_num_to_char_overflow_lowercase_letters() {
-        num_to_char(27, 'a'..='z');
-    }
 }

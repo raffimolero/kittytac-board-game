@@ -1,6 +1,9 @@
 pub mod game;
 pub mod helpers;
 
+#[cfg(test)]
+extern crate test_case;
+
 use game::board::Board;
 
 fn main() {
