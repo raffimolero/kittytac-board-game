@@ -1,7 +1,7 @@
-use super::tile::Tile;
+use super::{tile::Tile, Team};
 use crate::helpers::{arr_2d_from_iter, repeat_char, Color, RESET};
 use rand::{distributions::Uniform, prelude::*};
-use std::{fmt::Display, iter::repeat, ops::RangeInclusive};
+use std::fmt::Display;
 use thiserror::Error;
 
 // pub fn num_to_chars(range: RangeInclusive<char>, mut num: usize) -> String {
@@ -61,6 +61,7 @@ enum InvalidMove {
 
 pub struct Board<const N: usize> {
     pub tiles: [[Tile; N]; N],
+    pub turn: Team,
 }
 
 impl<const N: usize> Board<N> {
@@ -113,7 +114,10 @@ impl<const N: usize> From<&str> for Board<N> {
             Tile::new(roll, tile_char)
         });
         let tiles = arr_2d_from_iter(tile_iter);
-        Self { tiles }
+        Self {
+            tiles,
+            turn: Team::Blue,
+        }
     }
 }
 

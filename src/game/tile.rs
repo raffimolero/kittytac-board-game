@@ -1,6 +1,6 @@
-use std::fmt::Display;
-
+use super::Team;
 use crate::helpers::{Color, RESET};
+use std::fmt::Display;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PieceKind {
@@ -9,12 +9,6 @@ pub enum PieceKind {
     Knight,
     Rook,
     King,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Team {
-    Red,
-    Blue,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
