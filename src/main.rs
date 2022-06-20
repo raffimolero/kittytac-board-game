@@ -10,8 +10,8 @@ fn main() {
     let mut board = Board::<8>::new();
     println!("{board}");
 
-    let temp = board.tiles[0][7].piece;
-    board.tiles[0][7].piece = board.tiles[7][0].piece;
-    board.tiles[7][0].piece = temp;
-    println!("{board}");
+    // let temp = board.tiles[0][7].piece;
+    // board.tiles[0][7].piece = board.tiles[7][0].piece;
+    // board.tiles[7][0].piece = temp;
+    // println!("{board}");
 }

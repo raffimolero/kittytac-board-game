@@ -2,6 +2,8 @@ use super::Team;
 use crate::helpers::{Color, RESET};
 use std::fmt::Display;
 
+pub static TILE_FLIPPING: bool = true;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PieceKind {
     Pawn,
@@ -94,13 +96,19 @@ impl Display for Tile {
         }
         .show(true, false);
         let fg = fg.show(false, false);
-        write!(
-            f,
-            "{fg}{l}{RESET}{bg}{}{fg}{r}{RESET}",
-            self.piece.map_or(
-                format!("{}_{RESET}", Color::Black.show(false, false)),
-                |p| p.to_string()
-            ),
-        )
+        let piece = self.piece.map_or_else(
+            || format!("{}◦{RESET}", Color::Black.show(false, false)),
+            |mut p| {
+                // p is a Copy of the piece, it does not need to be set back
+                if TILE_FLIPPING && self.kind != TileKind::Normal {
+                    p.team = match p.team {
+                        Team::Red => Team::Blue,
+                        Team::Blue => Team::Red,
+                    }
+                }
+                p.to_string()
+            },
+        );
+        write!(f, "{bg}{fg}{l}{piece}{bg}{fg}{r}{RESET}")
     }
 }

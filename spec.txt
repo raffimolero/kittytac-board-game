@@ -63,6 +63,6 @@ After being pushed, the piece can't move for one turn (the opponent has to move 
 WIN CONDITIONS
 The game is won by a player if:
 1. The opponent resigns.
-2. The opponent has no pieces left.
+	2. The opponent has no pieces left. (redundant because of 3)
 3. The opponent's king is killed.
 4. One of the player's pieces (other than the knight) stays still on the opponent's goal tile for at least one turn.

@@ -27,6 +27,15 @@ struct Position {
     x: usize,
     y: usize,
 }
+impl Position {
+    /// pushes the destination by 1 tile in the opposite direction from self.
+    /// returns None if self is not orthogonal or diagonal,
+    /// or if the resulting position is out of bounds.
+    fn find_push(self, destination: Self) -> Option<Self> {
+        todo!()
+    }
+}
+
 impl Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // let x = num_to_chars('a'..'z', self.x);
@@ -37,12 +46,16 @@ impl Display for Position {
 }
 
 // TODO: move contents and api
-enum Move {
+pub enum Move {
     Move {
         from: Position,
         to: Position,
     },
     Push {
+        from: Position,
+        to: Position,
+    },
+    KnightPush {
         from: Position,
         to: Position,
         push: Position,
@@ -59,17 +72,22 @@ enum InvalidMove {
     OutOfBounds(usize, Position),
 }
 
+#[derive(Debug, Clone)]
 pub struct Board<const N: usize> {
     pub tiles: [[Tile; N]; N],
     pub turn: Team,
 }
 
 impl<const N: usize> Board<N> {
-    fn get_legal_moves() -> Vec<Move> {
+    pub fn get_user_move(&self) -> Result<Move, InvalidMove> {
         todo!()
     }
 
-    fn make_move(&mut self) -> Result<(), InvalidMove> {
+    pub fn make_move(&mut self) -> Result<(), InvalidMove> {
+        todo!()
+    }
+
+    pub fn get_legal_moves() -> Vec<Move> {
         todo!()
     }
 }
