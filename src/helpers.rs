@@ -1,8 +1,14 @@
-use std::{fmt::Display, iter::repeat};
+//! a bunch of general-purpose stuff
+
+use std::{
+    fmt::Display,
+    io::{stdin, stdout, Write},
+    iter::repeat,
+    ops::RangeInclusive,
+};
 
 /// for format strings
 pub const RESET: &'static str = "\x1b[0m";
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Color {
     Black,
@@ -19,10 +25,6 @@ impl Color {
         format!("\x1b[{code}m")
     }
 
-    // pub fn reset() -> String {
-    //     Self::trigger("0")
-    // }
-
     pub fn show(self, back: bool, bright: bool) -> String {
         Self::trigger(&format!(
             "{}{}{}",
@@ -38,6 +40,26 @@ impl Display for Color {
     }
 }
 
+pub fn getln() -> String {
+    print!("> ");
+    stdout().flush().unwrap();
+    let mut buf = String::new();
+    stdin().read_line(&mut buf).unwrap();
+    buf
+}
+
+pub fn println(msg: &str) {
+    println!("{msg}");
+}
+
+pub fn num_to_char(num: u8, range: RangeInclusive<char>) -> char {
+    debug_assert!(
+        num + *range.start() as u8 <= *range.end() as u8,
+        "{num} was too large to convert into a char between {range:?}"
+    );
+    (num + *range.start() as u8) as char
+}
+
 pub fn repeat_char(c: char, count: usize) -> String {
     repeat(c).take(count).collect::<String>()
 }
@@ -50,4 +72,21 @@ pub fn arr_2d_from_iter<T, const N: usize>(mut iter: impl Iterator<Item = T>) ->
             ))
         })
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[should_panic = "10 was too large to convert into a char between '0'..='9'"]
+    fn test_num_to_char_overflow_decimal() {
+        num_to_char(10, '0'..='9');
+    }
+
+    #[test]
+    #[should_panic = "27 was too large to convert into a char between 'a'..='z'"]
+    fn test_num_to_char_overflow_lowercase_letters() {
+        num_to_char(27, 'a'..='z');
+    }
 }

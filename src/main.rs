@@ -1,5 +1,5 @@
-mod game;
-mod helpers;
+pub mod game;
+pub mod helpers;
 
 use game::board::Board;
 

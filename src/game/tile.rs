@@ -1,4 +1,4 @@
-use super::Team;
+use super::{Position, Team};
 use crate::helpers::{Color, RESET};
 use std::fmt::Display;
 
@@ -11,6 +11,11 @@ pub enum PieceKind {
     Knight,
     Rook,
     King,
+}
+impl PieceKind {
+    pub fn can_move(self, from: Position, to: Position) -> bool {
+        todo!()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
