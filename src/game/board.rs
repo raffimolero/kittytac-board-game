@@ -3,73 +3,18 @@
 #[cfg(test)]
 mod tests;
 
-use super::{tile::Tile, Position, Team};
+use super::{tile::Tile, Position, PositionParseErr, Team};
 use crate::{
     game::tile::PieceKind,
-    helpers::{arr_2d_from_iter, num_to_char, repeat_char, Color, RESET},
+    helpers::{arr_2d_from_iter, repeat_char, Color, RESET},
 };
-use rand::{distributions::Uniform, prelude::*};
 use std::{
     fmt::Display,
-    ops::{Index, RangeInclusive},
-    str::FromStr,
+    ops::{Index, IndexMut},
 };
+
+use rand::{distributions::Uniform, prelude::*};
 use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum PositionParseErr {
-    #[error("Empty position.")]
-    NoFile,
-
-    #[error(
-        "{0:?} is not a valid file (column.)\n\
-         Files are letters. They are not numbers or symbols."
-    )]
-    InvalidFile(char),
-
-    #[error("A file (column) was specified without a rank (row.)")]
-    NoRank,
-
-    #[error(
-        "{0:?} is not a valid rank (row.)\n\
-         Ranks are single-digit numbers."
-    )]
-    InvalidRank(char),
-}
-impl FromStr for Position {
-    type Err = PositionParseErr;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut chars = s.chars();
-        #[rustfmt::skip]
-        let mut parse_next = |
-            range: RangeInclusive<char>,
-            on_empty: Self::Err,
-            on_invalid: fn(char) -> Self::Err
-        | -> Result<usize, Self::Err> {
-            let symbol = chars.next().ok_or(on_empty)?.to_ascii_lowercase();
-            if !range.contains(&symbol) {
-                Err(on_invalid(symbol))?
-            }
-            Ok(symbol as usize - *range.start() as usize)
-        };
-
-        // hell i could write a macro for this so i would just have to type `parse_next!('a'..='z', File)`
-        // but that'd just be yeeting more mess into a different location coupled with this exact function
-        Ok(Self {
-            x: parse_next('a'..='z', Self::Err::NoFile, Self::Err::InvalidFile)?,
-            y: parse_next('1'..='9', Self::Err::NoRank, Self::Err::InvalidRank)?,
-        })
-    }
-}
-
-impl Display for Position {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let x = num_to_char(self.x as u8, 'a'..='z');
-        let y = num_to_char(self.y as u8, '1'..='9');
-        write!(f, "{x}{y}")
-    }
-}
 
 // TODO: move contents and api
 pub enum Move {
@@ -187,8 +132,13 @@ impl<const N: usize> Board<N> {
 impl<const N: usize> Index<Position> for Board<N> {
     type Output = Tile;
 
-    fn index(&self, index: Position) -> &Self::Output {
-        todo!()
+    fn index(&self, Position { x, y }: Position) -> &Self::Output {
+        &self.tiles[N - 1 - y][x]
+    }
+}
+impl<const N: usize> IndexMut<Position> for Board<N> {
+    fn index_mut(&mut self, Position { x, y }: Position) -> &mut Self::Output {
+        &mut self.tiles[N - 1 - y][x]
     }
 }
 
@@ -222,16 +172,20 @@ impl Board<8> {
     }
 }
 
+// fails if s does not contain the exact number of tiles needed
 impl<const N: usize> From<&str> for Board<N> {
-    fn from(start_pos: &str) -> Self {
+    fn from(s: &str) -> Self {
         let rng = thread_rng();
         let mut rng = Uniform::from(0..9).sample_iter(rng);
-        let tile_chars = start_pos.split_whitespace();
-        let tile_iter = tile_chars.map(|tile_char| {
+
+        let tile_chars = s.split_whitespace();
+        let mut tile_iter = tile_chars.map(|tile_char| {
             let roll = rng.next().unwrap();
             Tile::new(roll, tile_char)
         });
-        let tiles = arr_2d_from_iter(tile_iter);
+        let tiles = arr_2d_from_iter(&mut tile_iter);
+
+        assert_eq!(tile_iter.next(), None, "Board has too many tiles.");
         Self {
             tiles,
             turn: Team::Blue,

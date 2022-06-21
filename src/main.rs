@@ -10,7 +10,7 @@ fn main() {
     let board = Board::<6>::new();
     println!("{board}");
 
-    let mut board = Board::<8>::new();
+    let board = Board::<8>::new();
     println!("{board}");
 
     // let temp = board.tiles[0][7].piece;

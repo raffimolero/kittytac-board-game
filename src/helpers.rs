@@ -67,11 +67,13 @@ pub fn repeat_char(c: char, count: usize) -> String {
     repeat(c).take(count).collect::<String>()
 }
 
-pub fn arr_2d_from_iter<T, const N: usize>(mut iter: impl Iterator<Item = T>) -> [[T; N]; N] {
-    [(); N].map(|_| {
-        [(); N].map(|_| {
+pub fn arr_2d_from_iter<T, const W: usize, const H: usize>(
+    iter: &mut impl Iterator<Item = T>,
+) -> [[T; W]; H] {
+    [(); H].map(|_| {
+        [(); W].map(|_| {
             iter.next().expect(&format!(
-                "Ran out of items in an iterator while trying to fill an {N} by {N} array."
+                "Ran out of items while trying to fill a {W} by {H} array."
             ))
         })
     })

@@ -29,10 +29,13 @@ impl Display for Piece {
             .chars()
             .nth(self.kind as usize)
             .unwrap();
+
         let color = match self.team {
-            Team::Red => Color::Red.show(false, true),
-            Team::Blue => Color::Blue.show(false, true),
-        };
+            Team::Red => Color::Red,
+            Team::Blue => Color::Blue,
+        }
+        .show(false, true);
+
         write!(f, "{color}{icon}{RESET}")
     }
 }
