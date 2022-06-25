@@ -72,44 +72,46 @@ fn test_project(from: Position, to: Position, expected: Option<Position>) {
     assert_eq!(from.project(to, cap), expected);
 }
 
-#[test]
-fn test_moore_distance() {
-    let p = [
-        Position { x: 0, y: 0 },
-        Position { x: 1, y: 0 },
-        Position { x: 1, y: 1 },
-        Position { x: 3, y: 2 },
-        Position { x: 0, y: 8 },
-        Position { x: 8, y: 0 },
-        Position { x: 8, y: 8 },
-    ];
+// congratulations, we have eliminated an entire test
+// very wow
+// #[test]
+// fn test_moore_distance() {
+//     let p = [
+//         Position { x: 0, y: 0 },
+//         Position { x: 1, y: 0 },
+//         Position { x: 1, y: 1 },
+//         Position { x: 3, y: 2 },
+//         Position { x: 0, y: 8 },
+//         Position { x: 8, y: 0 },
+//         Position { x: 8, y: 8 },
+//     ];
 
-    // i was bored
-    // i trust my moore distance function about as much as i trust this test
-    // both work
-    for (i, ((a, b), expected)) in p
-        .iter()
-        .flat_map(|a| p.iter().map(|b| (*a, *b)))
-        .zip(
-            [
-                [0, 1, 1, 3, 8, 8, 8],
-                [1, 0, 1, 2, 8, 7, 8],
-                [1, 1, 0, 2, 7, 7, 7],
-                [3, 2, 2, 0, 6, 5, 6],
-                [8, 8, 7, 6, 0, 8, 8],
-                [8, 7, 7, 5, 8, 0, 8],
-                [8, 8, 7, 6, 8, 8, 0],
-            ]
-            .concat(),
-        )
-        .enumerate()
-    {
-        assert_eq!(
-            a.moore_distance(b),
-            expected,
-            "p[{}] was {a:?} and p[{}] was {b:?}",
-            i / p.len(),
-            i % p.len()
-        );
-    }
-}
+//     // i was bored
+//     // i trust my moore distance function about as much as i trust this test
+//     // both work
+//     for (i, ((a, b), expected)) in p
+//         .iter()
+//         .flat_map(|a| p.iter().map(|b| (*a, *b)))
+//         .zip(
+//             [
+//                 [0, 1, 1, 3, 8, 8, 8],
+//                 [1, 0, 1, 2, 8, 7, 8],
+//                 [1, 1, 0, 2, 7, 7, 7],
+//                 [3, 2, 2, 0, 6, 5, 6],
+//                 [8, 8, 7, 6, 0, 8, 8],
+//                 [8, 7, 7, 5, 8, 0, 8],
+//                 [8, 8, 7, 6, 8, 8, 0],
+//             ]
+//             .concat(),
+//         )
+//         .enumerate()
+//     {
+//         assert_eq!(
+//             a.moore_distance(b),
+//             expected,
+//             "p[{}] was {a:?} and p[{}] was {b:?}",
+//             i / p.len(),
+//             i % p.len()
+//         );
+//     }
+// }

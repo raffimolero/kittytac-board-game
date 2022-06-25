@@ -16,7 +16,7 @@ use std::{
 use rand::{distributions::Uniform, prelude::*};
 use thiserror::Error;
 
-// TODO: move contents and api
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Move {
     Move {
         from: Position,
@@ -64,6 +64,10 @@ pub enum InvalidMove {
     InvalidPush(Position, Position),
 }
 
+pub enum GameState {
+    Ongoing,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Board<const N: usize> {
     pub tiles: [[Tile; N]; N],
@@ -71,44 +75,53 @@ pub struct Board<const N: usize> {
 }
 
 impl<const N: usize> Board<N> {
-    // TODO: write a test
+    pub fn piece_can_move(&self, from: Position, to: Position) -> bool {
+        todo!()
+    }
+
+    // TODO: test
     pub fn get_move_from(
         &self,
         mut input: impl FnMut() -> String,
         mut output: impl FnMut(&str),
     ) -> Result<Move, InvalidMove> {
-        let mut get_bounded_position = |msg| {
+        let mut get_position = |check_bounds: bool, msg: &str| -> Result<Position, InvalidMove> {
             output(&format!("{self}\n{msg}"));
-            let pos = input().parse::<Position>()?;
-            if pos.x >= N || pos.y >= N {
-                return Err(InvalidMove::OutOfBounds(N, pos));
+            let input = input();
+            if input.to_lowercase() == "cancel" {
+                Err(InvalidMove::Cancelled)?
+            }
+            let pos = input.parse::<Position>()?;
+            if check_bounds && (pos.x >= N || pos.y >= N) {
+                Err(InvalidMove::OutOfBounds(N, pos))?
             }
             Ok(pos)
         };
 
-        let from = get_bounded_position("Which piece would you like to move?")?;
+        let from = get_position(true, "Which piece would you like to move?")?;
 
-        let piece = if let Some(x) = self[from].piece {
-            x
-        } else {
-            Err(InvalidMove::EmptyPosition(from))?
-        };
+        let piece = self[from].piece.ok_or(InvalidMove::EmptyPosition(from))?;
+
         if self.turn != piece.team {
             Err(InvalidMove::WrongTeam(self.turn, from, piece.team))?
         }
 
-        let to = get_bounded_position("Where would you like to move that piece?")?;
+        let to = get_position(true, "Where would you like to move that piece?")?;
 
+        // TODO: check if terrain blocks the piece
         if !piece.kind.can_move(from, to) {
             Err(InvalidMove::InvalidTrajectory(piece.kind, from, to))?
         }
         Ok(if let Some(pushee) = self[to].piece {
             if piece.kind == PieceKind::Knight {
-                let push = get_bounded_position(&format!(
-                    "You are about to push a {pushee} with a Knight.\n\
-                    Where would you like to push it?"
-                ))?;
-                if to.moore_distance(push) != 1 {
+                let push = get_position(
+                    false,
+                    &format!(
+                        "You are about to push a {pushee} with a Knight.\n\
+                        Where would you like to push it?"
+                    ),
+                )?;
+                if !PieceKind::King.can_move(to, push) {
                     Err(InvalidMove::InvalidPush(to, push))?
                 }
                 Move::KnightPush { from, to, push }
@@ -120,7 +133,7 @@ impl<const N: usize> Board<N> {
         })
     }
 
-    pub fn make_move(&mut self) -> Result<(), InvalidMove> {
+    pub fn make_move_unchecked(&mut self, m: Move) -> Result<GameState, InvalidMove> {
         todo!()
     }
 

@@ -2,6 +2,9 @@ use super::{Position, Team};
 use crate::helpers::{Color, RESET};
 use std::fmt::Display;
 
+#[cfg(test)]
+mod tests;
+
 pub static TILE_FLIPPING: bool = true;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -14,7 +17,17 @@ pub enum PieceKind {
 }
 impl PieceKind {
     pub fn can_move(self, from: Position, to: Position) -> bool {
-        todo!()
+        // TODO: test
+        // you know what tests suck maybe i should just resort to mathematical proofs
+        use PieceKind::*;
+        let dx = from.x.abs_diff(to.x);
+        let dy = from.y.abs_diff(to.y);
+        match self {
+            Pawn | King => dx.max(dy) == 1,
+            Bishop => dx == dy,
+            Knight => dx * dy == 2,
+            Rook => (dx == 0) ^ (dy == 0),
+        }
     }
 }
 
@@ -45,6 +58,11 @@ pub enum TileKind {
     Normal,
     Goal(Team),
 }
+impl Default for TileKind {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Tile {
@@ -73,7 +91,7 @@ impl Tile {
                 'B' => Bishop,
                 'P' => Pawn,
                 unknown => {
-                    panic!("oi, use '_' for spaces. i don't know what piece {unknown:?} is.")
+                    panic!("oi, use '_' for spaces, and keep piece kinds uppercase. i don't know what piece {unknown:?} is.")
                 }
             };
             Piece { team, kind }
@@ -91,19 +109,21 @@ impl Tile {
 }
 impl Display for Tile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (l, r, fg) = match self.height {
-            0 => (" ", " ", Color::Green),
-            1 => ("|", "|", Color::Yellow),
-            2 => ("║", "║", Color::Cyan),
+        let (bar, fg) = match self.height {
+            0 => (" ", Color::Green),
+            1 => ("|", Color::Yellow),
+            2 => ("║", Color::Cyan),
             unknown => panic!("Max tile height is 2, not {unknown}."),
         };
+
+        let fg = fg.show(false, false);
         let bg = match self.kind {
             TileKind::Normal => Color::Black,
             TileKind::Goal(Team::Red) => Color::Red,
             TileKind::Goal(Team::Blue) => Color::Blue,
         }
         .show(true, false);
-        let fg = fg.show(false, false);
+
         let piece = self.piece.map_or_else(
             || format!("{}◦{RESET}", Color::Black.show(false, false)),
             |mut p| {
@@ -117,6 +137,8 @@ impl Display for Tile {
                 p.to_string()
             },
         );
-        write!(f, "{bg}{fg}{l}{piece}{bg}{fg}{r}{RESET}")
+        // don't ask me how this works
+        let bar = [bg, fg, bar.into()].concat();
+        write!(f, "{bar}{piece}{bar}{RESET}")
     }
 }

@@ -11,7 +11,7 @@ use std::{
 };
 
 /// for format strings
-pub const RESET: &'static str = "\x1b[0m";
+pub const RESET: &str = "\x1b[0m";
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Color {
     Black,
@@ -43,6 +43,8 @@ impl Display for Color {
     }
 }
 
+// TODO: emulate I/O
+
 pub fn getln() -> String {
     print!("> ");
     stdout().flush().unwrap();
@@ -72,9 +74,9 @@ pub fn arr_2d_from_iter<T, const W: usize, const H: usize>(
 ) -> [[T; W]; H] {
     [(); H].map(|_| {
         [(); W].map(|_| {
-            iter.next().expect(&format!(
-                "Ran out of items while trying to fill a {W} by {H} array."
-            ))
+            iter.next().unwrap_or_else(|| {
+                panic!("Ran out of items while trying to fill a {W} by {H} array.")
+            })
         })
     })
 }

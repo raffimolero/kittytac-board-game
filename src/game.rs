@@ -15,10 +15,6 @@ pub enum Team {
     Blue,
 }
 
-fn difference(x: usize, y: usize) -> usize {
-    x.max(y) - x.min(y)
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Position {
     x: usize,
@@ -51,12 +47,6 @@ impl Position {
                 y: project(dest.y, diff_y, cap.y)?,
             })
         })?
-    }
-
-    pub fn moore_distance(self, other: Self) -> usize {
-        let x_diff = difference(self.x, other.x);
-        let y_diff = difference(self.y, other.y);
-        x_diff.max(y_diff)
     }
 }
 
