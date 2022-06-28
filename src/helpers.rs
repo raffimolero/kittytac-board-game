@@ -43,7 +43,10 @@ impl Display for Color {
     }
 }
 
-// TODO: emulate I/O
+pub trait IO {
+    fn input(&mut self) -> String;
+    fn output(&mut self, message: &str);
+}
 
 pub fn getln() -> String {
     print!("> ");

@@ -64,7 +64,7 @@ impl Default for TileKind {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Tile {
     pub height: u8,
     pub kind: TileKind,

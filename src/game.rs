@@ -9,16 +9,21 @@ mod tests;
 pub mod board;
 pub mod tile;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Team {
     Red,
     Blue,
 }
+impl Default for Team {
+    fn default() -> Self {
+        Self::Blue
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Position {
-    x: usize,
-    y: usize,
+    x: i32,
+    y: i32,
 }
 impl Position {
     /// pushes the destination by 1 tile in the opposite direction from self.
@@ -29,18 +34,16 @@ impl Position {
             None?
         }
 
-        let diff_x = dest.x as isize - self.x as isize;
-        let diff_y = dest.y as isize - self.y as isize;
+        let diff_x = dest.x - self.x;
+        let diff_y = dest.y - self.y;
 
         let ortho = (diff_x == 0) ^ (diff_y == 0);
         let diag = diff_x.abs() == diff_y.abs();
 
         (ortho || diag).then(|| {
-            fn project(dest: usize, diff: isize, cap: usize) -> Option<usize> {
-                let projected = dest as isize + diff.signum();
-                (0..cap as isize)
-                    .contains(&projected)
-                    .then(|| projected as usize)
+            fn project(dest: i32, diff: i32, cap: i32) -> Option<i32> {
+                let projected = dest + diff.signum();
+                (0..cap).contains(&projected).then(|| projected)
             }
             Some(Self {
                 x: project(dest.x, diff_x, cap.x)?,
@@ -80,12 +83,12 @@ impl FromStr for Position {
             range: RangeInclusive<char>,
             on_empty: Self::Err,
             on_invalid: fn(char) -> Self::Err
-        | -> Result<usize, Self::Err> {
+        | -> Result<i32, Self::Err> {
             let symbol = chars.next().ok_or(on_empty)?.to_ascii_lowercase();
             if !range.contains(&symbol) {
                 Err(on_invalid(symbol))?
             }
-            Ok(symbol as usize - *range.start() as usize)
+            Ok(symbol as i32 - *range.start() as i32)
         };
 
         // hell i could write a macro for this so i would just have to type `parse_next!('a'..='z', File)`
