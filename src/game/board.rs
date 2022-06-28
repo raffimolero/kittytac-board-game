@@ -3,10 +3,13 @@
 #[cfg(test)]
 mod tests;
 
-use super::{tile::Tile, Position, PositionParseErr, Team};
+use super::{
+    tile::{Piece, Tile},
+    Position, PositionParseErr, Team,
+};
 use crate::{
     game::tile::PieceKind,
-    helpers::{arr_2d_from_iter, repeat_char, Color, RESET},
+    helpers::{arr_2d_from_iter, repeat_char, Color, IO, RESET},
 };
 use std::{
     fmt::Display,
@@ -43,7 +46,7 @@ pub enum InvalidMove {
     InvalidPosition(#[from] PositionParseErr),
 
     #[error(
-        "You cannot move a piece to {1}.\n\
+        "You cannot move a piece on {1}.\n\
         It's out of bounds for a board of size {0} by {0}."
     )]
     OutOfBounds(usize, Position),
@@ -73,26 +76,128 @@ pub struct Board<const N: usize> {
     pub tiles: [[Tile; N]; N],
     pub turn: Team,
 }
+// deriving default cannot use const generics.
+// - [T; 0] is always Default, which would conflict with [T; N]
+impl<const N: usize> Default for Board<N> {
+    fn default() -> Self {
+        Self {
+            tiles: [(); N].map(|_| [(); N].map(|_| Default::default())),
+            turn: Default::default(),
+        }
+    }
+}
+
+pub struct Warning {
+    prompt: String,
+    proceed: String,
+}
+impl Warning {
+    fn warn(&self, io: impl IO) -> bool {
+        todo!()
+    }
+}
+
+pub enum Ruling {
+    Allow(Option<Warning>),
+    Deny(String),
+}
+impl Ruling {
+    fn check(&self, io: impl IO) -> bool {
+        use Ruling::*;
+        match self {
+            Allow(None) => true,
+            Allow(Some(warning)) => warning.warn(io),
+            Deny(reason) => {
+                io.output(reason);
+                false
+            }
+        }
+    }
+}
+
+pub struct Rules {
+    climb_double_cliffs: Ruling,
+    move_after_climb: Ruling,
+    push_teammates: Ruling,
+    king_suicide: Ruling,
+    suicide_off_cliff: Ruling,
+    suicide_off_board: Ruling,
+    cliff_bonk_friendly_fire: Ruling,
+}
+impl Default for Rules {
+    fn default() -> Self {
+        use Ruling::*;
+        Self {
+            climb_double_cliffs: Deny("You cannot move a piece up a 2-high cliff.".to_owned()),
+            move_after_climb: Deny("A piece cannot keep moving after climbing up a step.".to_owned()),
+            push_teammates: Allow(None),
+            king_suicide: Allow(Some(Warning {
+                prompt: "You are about to kill your king. You will immediately lose the game if you continue.".to_owned(),
+                proceed: "gg".to_owned(),
+            })),
+            suicide_off_cliff: Allow(Some(Warning {
+                prompt: "Your piece will fall off a cliff and die.".to_owned(),
+                proceed: "yeet".to_owned(),
+            })),
+            suicide_off_board: Allow(Some(Warning {
+                prompt: "Your piece will fall off the board and die.".to_owned(),
+                proceed: "adios".to_owned(),
+            })),
+            cliff_bonk_friendly_fire: Allow(Some(Warning {
+                prompt: "Pushing this piece off a cliff will kill another one of your own pieces.".to_owned(),
+                proceed: "bonk".to_owned(),
+            })),
+        }
+    }
+}
 
 impl<const N: usize> Board<N> {
-    pub fn piece_can_move(&self, from: Position, to: Position) -> bool {
+    pub fn is_cliff(&self, from: Position, to: Position) -> bool {
+        self[from].height - 2 >= self[to].height
+    }
+
+    pub fn move_concerns(&self, rules: Rules, io: impl IO, mut from: Position, to: Position) {
+        let dx = (to.x - from.x).signum();
+        let dy = (to.y - from.y).signum();
+
+        let is_king = matches!(
+            self[from].piece,
+            Some(Piece {
+                kind: PieceKind::King,
+                ..
+            }),
+        );
+        let is_king = self[from]
+            .piece
+            .expect("The From position was empty. This should'e been checked before asking for move concerns.")
+            .kind == PieceKind::King;
+        let mut has_climbed = false;
+        let mut prev_height;
+        while from != to {
+            prev_height = self[from].height;
+            from.x += dx;
+            from.y += dy;
+            let cur_height = self[from].height;
+            match [prev_height, cur_height] {
+                [0, 2] => rules.climb_double_cliffs,
+                [2, 0] => rules.suicide_off_cliff,
+                _ => {}
+            };
+        }
+
         todo!()
     }
 
     // TODO: test
-    pub fn get_move_from(
-        &self,
-        mut input: impl FnMut() -> String,
-        mut output: impl FnMut(&str),
-    ) -> Result<Move, InvalidMove> {
+    pub fn get_move_from(&self, io: impl IO) -> Result<Move, InvalidMove> {
         let mut get_position = |check_bounds: bool, msg: &str| -> Result<Position, InvalidMove> {
-            output(&format!("{self}\n{msg}"));
-            let input = input();
+            io.output(&format!("{self}\n{msg}"));
+            let input = io.input();
             if input.to_lowercase() == "cancel" {
                 Err(InvalidMove::Cancelled)?
             }
             let pos = input.parse::<Position>()?;
-            if check_bounds && (pos.x >= N || pos.y >= N) {
+            if check_bounds && (pos.x >= N as i32 || pos.y >= N as i32) {
                 Err(InvalidMove::OutOfBounds(N, pos))?
             }
             Ok(pos)
@@ -106,7 +211,7 @@ impl<const N: usize> Board<N> {
             Err(InvalidMove::WrongTeam(self.turn, from, piece.team))?
         }
 
-        let to = get_position(true, "Where would you like to move that piece?")?;
+        let to = get_position(false, "Where would you like to move that piece?")?;
 
         // TODO: check if terrain blocks the piece
         if !piece.kind.can_move(from, to) {
@@ -146,12 +251,12 @@ impl<const N: usize> Index<Position> for Board<N> {
     type Output = Tile;
 
     fn index(&self, Position { x, y }: Position) -> &Self::Output {
-        &self.tiles[N - 1 - y][x]
+        &self.tiles[N - 1 - y as usize][x as usize]
     }
 }
 impl<const N: usize> IndexMut<Position> for Board<N> {
     fn index_mut(&mut self, Position { x, y }: Position) -> &mut Self::Output {
-        &mut self.tiles[N - 1 - y][x]
+        &mut self.tiles[N - 1 - y as usize][x as usize]
     }
 }
 
