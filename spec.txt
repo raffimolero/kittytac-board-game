@@ -60,6 +60,10 @@ Pieces die if they are pushed off the board or off a 2-cube-tall cliff.
 Nothing happens if a piece is pushed into another piece or into a 2-tall wall from the bottom.
 After being pushed, the piece can't move for one turn (the opponent has to move something else on their turn).
 
+EDGE CASES
+Pushing a piece from a 2 high cliff onto another piece kills both pieces.
+Pieces can commit suicide and friendly fire.
+
 WIN CONDITIONS
 The game is won by a player if:
 1. The opponent resigns.
