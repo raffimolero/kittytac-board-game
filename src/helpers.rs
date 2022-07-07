@@ -47,6 +47,14 @@ pub trait IO {
     fn input(&mut self) -> String;
     fn output(&mut self, message: &str);
 }
+impl<T: IO> IO for &mut T {
+    fn input(&mut self) -> String {
+        (*self).input()
+    }
+    fn output(&mut self, message: &str) {
+        (*self).output(message)
+    }
+}
 
 pub fn getln() -> String {
     print!("> ");

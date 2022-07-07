@@ -39,17 +39,11 @@ pub enum Move {
 
 #[derive(Error, Debug)]
 pub enum InvalidMove {
-    #[error("Cancelled the move operation.")]
-    Cancelled,
+    #[error("{0}")]
+    Cancelled(#[from] Cancelled),
 
     #[error("{0}")]
     InvalidPosition(#[from] PositionParseErr),
-
-    #[error(
-        "You cannot move a piece on {1}.\n\
-        It's out of bounds for a board of size {0} by {0}."
-    )]
-    OutOfBounds(usize, Position),
 
     #[error("The tile at position {0} is empty.")]
     EmptyPosition(Position),
@@ -67,46 +61,21 @@ pub enum InvalidMove {
     InvalidPush(Position, Position),
 }
 
-pub enum GameState {
-    Ongoing,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Board<const N: usize> {
-    pub tiles: [[Tile; N]; N],
-    pub turn: Team,
-}
-// deriving default cannot use const generics.
-// - [T; 0] is always Default, which would conflict with [T; N]
-impl<const N: usize> Default for Board<N> {
-    fn default() -> Self {
-        Self {
-            tiles: [(); N].map(|_| [(); N].map(|_| Default::default())),
-            turn: Default::default(),
-        }
-    }
-}
-
-pub struct Warning {
-    prompt: String,
-    proceed: String,
-}
-impl Warning {
-    fn warn(&self, io: impl IO) -> bool {
-        todo!()
-    }
-}
-
 pub enum Ruling {
-    Allow(Option<Warning>),
+    Allow,
+    Warn { prompt: String, proceed: String },
     Deny(String),
 }
 impl Ruling {
-    fn check(&self, io: impl IO) -> bool {
+    fn check(&self, mut io: impl IO) -> bool {
         use Ruling::*;
         match self {
-            Allow(None) => true,
-            Allow(Some(warning)) => warning.warn(io),
+            Allow => true,
+            Warn { prompt, proceed } => {
+                io.output(&prompt);
+                io.output(&format!("Type {proceed} to continue anyway."));
+                io.input() == *proceed
+            }
             Deny(reason) => {
                 io.output(reason);
                 false
@@ -130,23 +99,47 @@ impl Default for Rules {
         Self {
             climb_double_cliffs: Deny("You cannot move a piece up a 2-high cliff.".to_owned()),
             move_after_climb: Deny("A piece cannot keep moving after climbing up a step.".to_owned()),
-            push_teammates: Allow(None),
-            king_suicide: Allow(Some(Warning {
+            push_teammates: Allow,
+            king_suicide: Warn {
                 prompt: "You are about to kill your king. You will immediately lose the game if you continue.".to_owned(),
                 proceed: "gg".to_owned(),
-            })),
-            suicide_off_cliff: Allow(Some(Warning {
+            },
+            suicide_off_cliff: Warn {
                 prompt: "Your piece will fall off a cliff and die.".to_owned(),
                 proceed: "yeet".to_owned(),
-            })),
-            suicide_off_board: Allow(Some(Warning {
+            },
+            suicide_off_board: Warn {
                 prompt: "Your piece will fall off the board and die.".to_owned(),
                 proceed: "adios".to_owned(),
-            })),
-            cliff_bonk_friendly_fire: Allow(Some(Warning {
+            },
+            cliff_bonk_friendly_fire: Warn {
                 prompt: "Pushing this piece off a cliff will kill another one of your own pieces.".to_owned(),
                 proceed: "bonk".to_owned(),
-            })),
+            },
+        }
+    }
+}
+
+#[derive(Error, Debug)]
+#[error("Cancelled the move operation.")]
+pub struct Cancelled;
+
+pub enum GameState {
+    Ongoing,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Board<const N: usize> {
+    pub tiles: [[Tile; N]; N],
+    pub turn: Team,
+}
+// deriving default cannot use const generics.
+// - [T; 0] is always Default, which would conflict with [T; N]
+impl<const N: usize> Default for Board<N> {
+    fn default() -> Self {
+        Self {
+            tiles: [(); N].map(|_| [(); N].map(|_| Default::default())),
+            turn: Default::default(),
         }
     }
 }
@@ -156,54 +149,92 @@ impl<const N: usize> Board<N> {
         self[from].height - 2 >= self[to].height
     }
 
-    pub fn move_concerns(&self, rules: Rules, io: impl IO, mut from: Position, to: Position) {
+    // RESOLVE: mutable borrow or move?
+    pub fn check_push(&self, mut rules: Rules,)
+
+    // TODO: return value
+    pub fn check_terrain(&self, mut rules: Rules, mut io: impl IO, mut from: Position, to: Position) {
+        // [ ]
+        // [x]
+        // TODO: return value
+        fn resolve_concern(ruling: &mut Ruling) {
+            match ruling {
+                Ruling::Allow => {}
+                Ruling::Warn { prompt, proceed } => todo!(),
+                Ruling::Deny(_) => todo!(),
+            }
+        }
+
         let dx = (to.x - from.x).signum();
         let dy = (to.y - from.y).signum();
 
-        let is_king = matches!(
-            self[from].piece,
-            Some(Piece {
-                kind: PieceKind::King,
-                ..
-            }),
-        );
         let is_king = self[from]
             .piece
-            .expect("The From position was empty. This should'e been checked before asking for move concerns.")
+            .expect("The From position was empty. This should've been checked before asking for move concerns.")
             .kind == PieceKind::King;
         let mut has_climbed = false;
         let mut prev_height;
         while from != to {
+            if has_climbed {
+                match rules.move_after_climb {
+                    Ruling::Allow => {}
+                    Ruling::Warn { prompt, proceed } => todo!(),
+                    Ruling::Deny(_) => todo!(),
+                }
+            }
             prev_height = self[from].height;
             from.x += dx;
             from.y += dy;
             let cur_height = self[from].height;
             match [prev_height, cur_height] {
-                [0, 2] => rules.climb_double_cliffs,
-                [2, 0] => rules.suicide_off_cliff,
-                _ => {}
+                [0, 2] => {
+                    rules.climb_double_cliffs;
+                }
+                [2, 0] => {
+                    rules.suicide_off_cliff;
+                }
+                [0, 1] | [1, 2] => {
+                    has_climbed = true;
+                }
             };
         }
 
         todo!()
     }
 
-    // TODO: test
-    pub fn get_move_from(&self, io: impl IO) -> Result<Move, InvalidMove> {
-        let mut get_position = |check_bounds: bool, msg: &str| -> Result<Position, InvalidMove> {
+    fn input_position(
+        &self,
+        mut io: impl IO,
+        check_bounds: bool,
+        msg: &str,
+    ) -> Result<Position, Cancelled> {
+        loop {
             io.output(&format!("{self}\n{msg}"));
             let input = io.input();
             if input.to_lowercase() == "cancel" {
-                Err(InvalidMove::Cancelled)?
+                return Err(Cancelled);
             }
-            let pos = input.parse::<Position>()?;
+            let pos = if let Ok(x) = input.parse::<Position>() {
+                x
+            } else {
+                io.output("That isn't a valid position. Try again.");
+                continue;
+            };
             if check_bounds && (pos.x >= N as i32 || pos.y >= N as i32) {
-                Err(InvalidMove::OutOfBounds(N, pos))?
+                io.output(&format!(
+                    "You cannot move a piece on {pos}.\n\
+                    It's out of bounds for a board of size {N} by {N}."
+                ));
+                continue;
             }
-            Ok(pos)
-        };
 
-        let from = get_position(true, "Which piece would you like to move?")?;
+            return Ok(pos);
+        }
+    }
+
+    // TODO: test
+    pub fn get_move_from(&self, mut io: impl IO) -> Result<Move, InvalidMove> {
+        let from = self.input_position(&mut io, true, "Which piece would you like to move?")?;
 
         let piece = self[from].piece.ok_or(InvalidMove::EmptyPosition(from))?;
 
@@ -211,31 +242,35 @@ impl<const N: usize> Board<N> {
             Err(InvalidMove::WrongTeam(self.turn, from, piece.team))?
         }
 
-        let to = get_position(false, "Where would you like to move that piece?")?;
+        let to = self.input_position(&mut io, false, "Where would you like to move that piece?")?;
 
         // TODO: check if terrain blocks the piece
         if !piece.kind.can_move(from, to) {
             Err(InvalidMove::InvalidTrajectory(piece.kind, from, to))?
         }
-        Ok(if let Some(pushee) = self[to].piece {
-            if piece.kind == PieceKind::Knight {
-                let push = get_position(
-                    false,
-                    &format!(
-                        "You are about to push a {pushee} with a Knight.\n\
-                        Where would you like to push it?"
-                    ),
-                )?;
-                if !PieceKind::King.can_move(to, push) {
-                    Err(InvalidMove::InvalidPush(to, push))?
+        self[to]
+            .piece
+            .map_or(Ok(Move::Move { from, to }), |pushee| {
+                if piece.kind == PieceKind::Knight {
+                    self.input_position(
+                        &mut io,
+                        false,
+                        &format!(
+                            "You are about to push a {pushee} with a Knight.\n\
+                            Where would you like to push it?"
+                        ),
+                    )
+                    .map_err(InvalidMove::Cancelled)
+                    .and_then(|push| {
+                        PieceKind::King
+                            .can_move(to, push) // TODO: validate this push
+                            .then_some(Move::KnightPush { from, to, push })
+                            .ok_or(InvalidMove::InvalidPush(to, push))
+                    })
+                } else {
+                    Ok(Move::Push { from, to })
                 }
-                Move::KnightPush { from, to, push }
-            } else {
-                Move::Push { from, to }
-            }
-        } else {
-            Move::Move { from, to }
-        })
+            })
     }
 
     pub fn make_move_unchecked(&mut self, m: Move) -> Result<GameState, InvalidMove> {
